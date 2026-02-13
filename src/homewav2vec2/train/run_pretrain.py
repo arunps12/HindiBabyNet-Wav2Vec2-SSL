@@ -15,6 +15,8 @@ import json
 import logging
 import math
 import os
+
+from tqdm import tqdm
 import sys
 from pathlib import Path
 
@@ -275,6 +277,18 @@ def train(cfg: dict) -> None:
              num_epochs, total_steps, use_fp16, grad_accum)
 
     model.train()
+
+    # Progress bar (only on rank 0)
+    pbar = tqdm(
+        total=total_steps,
+        initial=global_step,
+        desc="SSL Training",
+        unit="step",
+        disable=not is_main_process(),
+        dynamic_ncols=True,
+        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}] {postfix}",
+    )
+
     for epoch in range(start_epoch, num_epochs):
         if sampler is not None:
             sampler.set_epoch(epoch)
@@ -300,17 +314,26 @@ def train(cfg: dict) -> None:
                 scheduler.step()
                 global_step += 1
 
+                # Update progress bar
+                lr_current = scheduler.get_last_lr()[0]
+                current_loss = accumulation_loss * grad_accum
+                pbar.update(1)
+                pbar.set_postfix(
+                    epoch=epoch,
+                    loss=f"{current_loss:.4f}",
+                    lr=f"{lr_current:.2e}",
+                )
+
                 # Logging
                 if is_main_process() and global_step % logging_steps == 0:
-                    lr_current = scheduler.get_last_lr()[0]
                     log.info(
                         "epoch=%d step=%d loss=%.4f lr=%.2e",
-                        epoch, global_step, accumulation_loss * grad_accum, lr_current,
+                        epoch, global_step, current_loss, lr_current,
                     )
                     if metrics_logger:
                         metrics_logger.log(global_step, {
                             "epoch": epoch,
-                            "loss": round(accumulation_loss * grad_accum, 4),
+                            "loss": round(current_loss, 4),
                             "lr": lr_current,
                         })
                     accumulation_loss = 0.0
@@ -327,6 +350,8 @@ def train(cfg: dict) -> None:
 
         if max_steps > 0 and global_step >= max_steps:
             break
+
+    pbar.close()
 
     # === Save final model ===
     if is_main_process():
