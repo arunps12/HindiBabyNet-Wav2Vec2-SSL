@@ -6,7 +6,7 @@ Continued pretraining of `facebook/wav2vec2-base` on long-form Hindi parent–in
 
 ```bash
 # 1. Clone and enter the repo
-git clone <repo-url>
+git clone https://github.com/arunps12/HindiBabyNet-Wav2Vec2-SSL.git
 cd HindiBabyNet-Wav2Vec2-SSL
 
 # 2. Create a virtual environment and install dependencies

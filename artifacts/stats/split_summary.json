@@ -1,0 +1,24 @@
+{
+  "total_valid": 109,
+  "train_files": 99,
+  "dev_files": 10,
+  "train_duration_hours": 308.45,
+  "dev_duration_hours": 37.25,
+  "split_column": "participant_id",
+  "train_groups": [
+    "20250201",
+    "20250202",
+    "20250209",
+    "20250216",
+    "20250222",
+    "20250224",
+    "20250307",
+    "20250311",
+    "20250323",
+    "20250329",
+    "Trial"
+  ],
+  "dev_groups": [
+    "20250427"
+  ]
+}
