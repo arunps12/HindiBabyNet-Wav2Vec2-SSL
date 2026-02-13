@@ -183,6 +183,7 @@ def train(cfg: dict) -> None:
         target_sr=cfg.get("sample_rate", 16000),
         silence_rms_threshold=cfg.get("silence_rms_threshold", 0.001),
         max_crop_retries=cfg.get("max_crop_retries", 10),
+        epoch_multiplier=cfg.get("epoch_multiplier", 1),
     )
 
     sampler = DistributedSampler(dataset, shuffle=True) if is_distributed() else None
