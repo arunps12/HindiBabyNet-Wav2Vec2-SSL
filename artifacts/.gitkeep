@@ -1,0 +1,2 @@
+# This directory holds pipeline artifacts (metadata only).
+# Checkpoints, manifests, stats, logs — NO raw audio.

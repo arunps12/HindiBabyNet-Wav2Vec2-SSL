@@ -1,0 +1,25 @@
+# Data pipeline configuration
+raw_audio_root: /scratch/users/arunps/hindibabynet/audio_raw/RawAudioData
+allowed_ext:
+  - ".wav"
+  - ".flac"
+sample_rate: 16000
+min_duration_sec: 2.0
+max_duration_sec: null
+channel: mono            # convert to mono on-the-fly
+
+# Cropping
+crop_sec: 8.0
+silence_rms_threshold: 0.001
+max_crop_retries: 10
+
+# Splits
+split_by: participant_id     # or recording_id
+dev_fraction: 0.1
+split_seed: 42
+
+# Manifest
+compute_sha1: false          # expensive for large files
+
+# Validation
+clipping_threshold: 0.99

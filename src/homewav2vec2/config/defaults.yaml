@@ -1,0 +1,5 @@
+# Default global settings for HindiBabyNet Wav2Vec2 SSL pipeline
+seed: 42
+num_workers: 4
+log_level: INFO
+artifacts_dir: artifacts

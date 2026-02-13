@@ -1,0 +1,26 @@
+stages:
+  ingestion:
+    cmd: bash scripts/run_ingestion.sh
+    outs:
+      - artifacts/manifests/raw_audio_manifest.parquet
+  validation:
+    cmd: bash scripts/run_validation.sh
+    deps:
+      - artifacts/manifests/raw_audio_manifest.parquet
+    outs:
+      - artifacts/validation/summary.json
+      - artifacts/validation/invalid_files.parquet
+  transformation:
+    cmd: bash scripts/run_transformation.sh
+    deps:
+      - artifacts/manifests/raw_audio_manifest.parquet
+      - artifacts/validation/invalid_files.parquet
+    outs:
+      - artifacts/manifests/train_split.parquet
+      - artifacts/manifests/dev_split.parquet
+  training:
+    cmd: bash scripts/run_train_ssl.sh
+    deps:
+      - artifacts/manifests/train_split.parquet
+    outs:
+      - artifacts/training/
