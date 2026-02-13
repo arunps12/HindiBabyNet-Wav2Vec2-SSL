@@ -20,7 +20,7 @@ from pathlib import Path
 
 import torch
 import yaml
-from torch.cuda.amp import GradScaler, autocast
+from torch.amp import GradScaler, autocast
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
@@ -40,6 +40,20 @@ from homewav2vec2.train.ddp import (
 from homewav2vec2.utils.seed import set_seed
 
 log = logging.getLogger("homewav2vec2.train")
+
+
+# ---------------------------------------------------------------------------
+# Helper: compute feature-encoder output lengths from config
+# ---------------------------------------------------------------------------
+
+def _feat_extract_output_lengths(input_length: int, config: Wav2Vec2Config) -> int:
+    """Replicate Wav2Vec2Model._get_feat_extract_output_lengths using config only.
+
+    This runs in DataLoader workers where the model is not available.
+    """
+    for kernel_size, stride in zip(config.conv_kernel, config.conv_stride):
+        input_length = (input_length - kernel_size) // stride + 1
+    return input_length
 
 
 # ---------------------------------------------------------------------------
@@ -68,9 +82,7 @@ class Wav2Vec2PreTrainCollator:
         )
 
         batch_size = features["input_values"].shape[0]
-        seq_len = self.config._get_feat_extract_output_lengths(features["input_values"].shape[1])
-        if isinstance(seq_len, torch.Tensor):
-            seq_len = seq_len.item()
+        seq_len = _feat_extract_output_lengths(features["input_values"].shape[1], self.config)
 
         # Create mask_time_indices
         mask_time_indices = _compute_mask_indices(
@@ -210,7 +222,7 @@ def train(cfg: dict) -> None:
 
     # === AMP scaler ===
     use_fp16 = cfg.get("fp16", True) and torch.cuda.is_available()
-    scaler = GradScaler(enabled=use_fp16)
+    scaler = GradScaler("cuda", enabled=use_fp16)
 
     # === LR scheduler ===
     num_epochs = cfg.get("num_train_epochs", 10)
@@ -272,7 +284,7 @@ def train(cfg: dict) -> None:
             # Move to device
             batch = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
 
-            with autocast(enabled=use_fp16):
+            with autocast("cuda", enabled=use_fp16):
                 outputs = model(**batch)
                 loss = outputs.loss / grad_accum
 
