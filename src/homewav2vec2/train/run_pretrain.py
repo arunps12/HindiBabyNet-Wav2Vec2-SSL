@@ -289,7 +289,13 @@ def train(cfg: dict) -> None:
         bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}] {postfix}",
     )
 
-    for epoch in range(start_epoch, num_epochs):
+    # When max_steps is set, loop indefinitely over epochs until we reach the target.
+    # When max_steps <= 0, use num_train_epochs as the stopping criterion.
+    max_epochs = num_epochs if max_steps <= 0 else 10_000_000  # effectively infinite
+    epoch = start_epoch
+    done = False
+
+    for epoch in range(start_epoch, max_epochs):
         if sampler is not None:
             sampler.set_epoch(epoch)
 
@@ -346,9 +352,10 @@ def train(cfg: dict) -> None:
                     )
 
                 if max_steps > 0 and global_step >= max_steps:
+                    done = True
                     break
 
-        if max_steps > 0 and global_step >= max_steps:
+        if done:
             break
 
     pbar.close()
