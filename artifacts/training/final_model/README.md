@@ -1,7 +1,7 @@
 ---
 language:
   - hi
-license: apache-2.0
+license: mit
 tags:
   - wav2vec2
   - self-supervised

@@ -5,7 +5,7 @@
 [![Transformers 5.1](https://img.shields.io/badge/%F0%9F%A4%97%20Transformers-5.1-FFD21E)](https://huggingface.co/docs/transformers)
 [![torchaudio 2.10](https://img.shields.io/badge/torchaudio-2.10-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/audio/)
 [![uv](https://img.shields.io/badge/uv-package%20manager-DE5FE9?logo=uv&logoColor=white)](https://docs.astral.sh/uv/)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Hugging Face Model](https://img.shields.io/badge/%F0%9F%A4%97%20Model-wav2vec2--home--hindibabynet--ssl-yellow)](https://huggingface.co/arunps/wav2vec2-home-hindibabynet-ssl)
 
 Continued pretraining of `facebook/wav2vec2-base` on long-form Hindi parent–infant home recordings.
