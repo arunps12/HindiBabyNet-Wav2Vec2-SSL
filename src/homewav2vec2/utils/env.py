@@ -33,5 +33,9 @@ def get_hf_repo_id() -> str:
     return os.environ.get("HF_REPO_ID", "arunps/wav2vec2-home-hindibabynet")
 
 
+def get_hf_hubert_repo_id() -> str:
+    return os.environ.get("HF_HUBERT_REPO_ID", "arunps/hubert-home-hindibabynet-ssl")
+
+
 def get_hf_private() -> bool:
     return os.environ.get("HF_PRIVATE", "true").lower() == "true"

@@ -24,3 +24,16 @@ stages:
       - artifacts/manifests/train_split.parquet
     outs:
       - artifacts/training/
+  kmeans:
+    cmd: bash scripts/run_kmeans_labels.sh
+    deps:
+      - artifacts/manifests/train_split.parquet
+    outs:
+      - artifacts/hubert_training/kmeans/
+  hubert_training:
+    cmd: bash scripts/run_train_hubert_ssl.sh
+    deps:
+      - artifacts/manifests/train_split.parquet
+      - artifacts/hubert_training/kmeans/kmeans_model.pkl
+    outs:
+      - artifacts/hubert_training/

@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Hugging Face Model](https://img.shields.io/badge/%F0%9F%A4%97%20Model-wav2vec2--home--hindibabynet--ssl-yellow)](https://huggingface.co/arunps/wav2vec2-home-hindibabynet-ssl)
 
-Continued pretraining of `facebook/wav2vec2-base` on long-form Hindi parent–infant home recordings.
+Continued pretraining of `facebook/wav2vec2-base` and `facebook/hubert-base-ls960` on long-form Hindi parent–infant home recordings.
 
 ## Pretrained Model on Hugging Face
 
@@ -147,12 +147,55 @@ torchrun --nproc_per_node 4 \
 
 **Output:** `artifacts/training/` (checkpoints, logs, final model)
 
-### Phase 5 — Push to Hugging Face Hub
+### Phase 4b — HuBERT SSL Training
+
+HuBERT uses a **masked-prediction** objective with k-means pseudo-labels (unlike wav2vec2's contrastive loss). Two extra steps are required:
+
+**Step 1 — Fit k-means on MFCC features:**
 
 ```bash
-bash scripts/run_push_hf.sh
+bash scripts/run_kmeans_labels.sh
 # or:
-python -m homewav2vec2.cli push_hf --config src/homewav2vec2/config/training.yaml
+python -m homewav2vec2.cli kmeans \
+    --config src/homewav2vec2/config/training_hubert.yaml \
+    --data-config src/homewav2vec2/config/data.yaml
+```
+
+**Output:** `artifacts/hubert_training/kmeans/kmeans_model.pkl`
+
+**Step 2 — Train HuBERT:**
+
+```bash
+# Single GPU
+bash scripts/run_train_hubert_ssl.sh
+
+# Multi-GPU (4 GPUs)
+bash scripts/run_train_hubert_ssl.sh 4
+
+# Or directly with torchrun:
+torchrun --nproc_per_node 4 \
+    -m homewav2vec2.train.run_pretrain_hubert \
+    --config src/homewav2vec2/config/training_hubert.yaml \
+    --data-config src/homewav2vec2/config/data.yaml
+```
+
+**Default config for RTX 2080 Ti (11 GB):**
+- `crop_sec=8`, `per_gpu_batch=2`, `grad_accum_steps=8`
+- `fp16=true`, `gradient_checkpointing=true`
+- `num_clusters=100`, 39-dim MFCC features (13 + deltas)
+
+**Output:** `artifacts/hubert_training/` (checkpoints, logs, final model)
+
+### Phase 5 — Push to Hugging Face Hub
+
+**Wav2Vec2:**
+```bash
+bash scripts/run_push_hf.sh
+```
+
+**HuBERT:**
+```bash
+bash scripts/run_push_hf_hubert.sh
 ```
 
 Requires `HF_TOKEN` in `.env`. Never prints the token.
@@ -160,9 +203,10 @@ Requires `HF_TOKEN` in `.env`. Never prints the token.
 ## Configuration
 
 - `src/homewav2vec2/config/data.yaml` — raw audio root, sample rate, cropping params, splits
-- `src/homewav2vec2/config/training.yaml` — model, hyperparams, checkpointing
+- `src/homewav2vec2/config/training.yaml` — wav2vec2 model, hyperparams, checkpointing
+- `src/homewav2vec2/config/training_hubert.yaml` — HuBERT model, k-means, hyperparams
 - `src/homewav2vec2/config/defaults.yaml` — seed, num_workers, log level
-- `.env` — secrets (HF_TOKEN, HF_REPO_ID)
+- `.env` — secrets (HF_TOKEN, HF_REPO_ID, HF_HUBERT_REPO_ID)
 
 ## Tests
 
@@ -178,7 +222,7 @@ src/homewav2vec2/
 ├── config/          — YAML configs
 ├── data/            — ingest, validate, transform, manifests
 ├── dataset/         — audio_io, cropping, hf_dataset (on-the-fly)
-├── train/           — run_pretrain, ddp, callbacks
+├── train/           — run_pretrain (wav2vec2), run_pretrain_hubert, kmeans_labels, ddp, callbacks
 └── utils/           — env, logging, seed
 scripts/             — shell wrappers
 artifacts/           — manifests, stats, validation, training outputs

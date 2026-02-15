@@ -1,0 +1,55 @@
+# HuBERT SSL Training configuration
+base_model: facebook/hubert-base-ls960
+
+# Training hyperparameters
+crop_sec: 8.0
+per_gpu_batch: 2
+grad_accum_steps: 8
+fp16: true
+gradient_checkpointing: true
+
+# --- Epochs / Steps ---
+# Same dataset as wav2vec2 (~346 h), effective batch=64, crop=8s:
+#   50,000 steps ≈ 20 passes with different random crops
+num_train_epochs: 25
+max_steps: 50000
+epoch_multiplier: 10       # each file yields 10 random crops per epoch
+
+learning_rate: 5.0e-5
+warmup_ratio: 0.1
+warmup_steps: 5000
+weight_decay: 0.01
+max_grad_norm: 1.0
+
+# Scheduler
+lr_scheduler_type: linear
+
+# Logging & saving
+logging_steps: 100
+save_steps: 2500
+save_total_limit: 5
+eval_strategy: "no"
+
+# Dataloader
+num_workers: 4
+
+# --- HuBERT-specific ---
+# K-means pseudo-labels
+num_clusters: 100           # number of k-means clusters for pseudo-labels
+kmeans_sample_crops: 50000  # number of crops to sample for fitting k-means
+kmeans_batch_size: 10000    # MiniBatchKMeans batch size
+kmeans_feature: mfcc        # "mfcc" for iteration-0, "hubert_layer6" for iteration-1
+num_mfcc: 13                # MFCC coefficients (39-dim with deltas)
+use_deltas: true            # append delta + delta-delta to MFCCs
+final_proj_dim: 256         # projection dim before label head
+
+# Directories
+output_dir: artifacts/hubert_training
+checkpoint_dir: artifacts/hubert_training/checkpoints
+log_dir: artifacts/hubert_training/logs
+kmeans_dir: artifacts/hubert_training/kmeans
+
+# HF Hub push
+push_to_hub: false
+hub_model_id: null          # filled from .env HF_HUBERT_REPO_ID
+hub_private: true
