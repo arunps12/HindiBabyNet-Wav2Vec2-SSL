@@ -1,6 +1,67 @@
 # HindiBabyNet-Wav2Vec2-SSL
 
+[![Python 3.10](https://img.shields.io/badge/Python-3.10-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![PyTorch 2.10](https://img.shields.io/badge/PyTorch-2.10-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![Transformers 5.1](https://img.shields.io/badge/%F0%9F%A4%97%20Transformers-5.1-FFD21E)](https://huggingface.co/docs/transformers)
+[![torchaudio 2.10](https://img.shields.io/badge/torchaudio-2.10-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/audio/)
+[![uv](https://img.shields.io/badge/uv-package%20manager-DE5FE9?logo=uv&logoColor=white)](https://docs.astral.sh/uv/)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Hugging Face Model](https://img.shields.io/badge/%F0%9F%A4%97%20Model-wav2vec2--home--hindibabynet--ssl-yellow)](https://huggingface.co/arunps/wav2vec2-home-hindibabynet-ssl)
+
 Continued pretraining of `facebook/wav2vec2-base` on long-form Hindi parent–infant home recordings.
+
+## Pretrained Model on Hugging Face
+
+The trained model is published on the Hugging Face Hub and can be used directly for downstream tasks:
+
+> **[arunps/wav2vec2-home-hindibabynet-ssl](https://huggingface.co/arunps/wav2vec2-home-hindibabynet-ssl)**
+
+### Feature Extraction
+
+```python
+from transformers import Wav2Vec2Model, Wav2Vec2FeatureExtractor
+import torchaudio, torch
+
+model = Wav2Vec2Model.from_pretrained("arunps/wav2vec2-home-hindibabynet-ssl")
+feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained("arunps/wav2vec2-home-hindibabynet-ssl")
+
+waveform, sr = torchaudio.load("your_audio.wav")
+if sr != 16000:
+    waveform = torchaudio.functional.resample(waveform, sr, 16000)
+waveform = waveform.mean(dim=0)  # mono
+
+inputs = feature_extractor(waveform.numpy(), sampling_rate=16000, return_tensors="pt")
+with torch.no_grad():
+    hidden_states = model(**inputs).last_hidden_state  # (1, T, 768)
+```
+
+### Fine-tuning for ASR (CTC)
+
+```python
+from transformers import Wav2Vec2ForCTC
+
+model = Wav2Vec2ForCTC.from_pretrained(
+    "arunps/wav2vec2-home-hindibabynet-ssl",
+    ctc_loss_reduction="mean",
+    pad_token_id=0,
+    vocab_size=YOUR_VOCAB_SIZE,
+)
+model.freeze_feature_encoder()
+# ... fine-tune on your labelled data
+```
+
+### Fine-tuning for Audio Classification
+
+```python
+from transformers import Wav2Vec2ForSequenceClassification
+
+model = Wav2Vec2ForSequenceClassification.from_pretrained(
+    "arunps/wav2vec2-home-hindibabynet-ssl",
+    num_labels=NUM_CLASSES,
+)
+model.freeze_feature_encoder()
+# ... fine-tune on labelled classification data
+```
 
 ## Quick Setup
 
