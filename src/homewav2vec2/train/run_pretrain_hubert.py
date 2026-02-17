@@ -281,12 +281,16 @@ def train(cfg: dict) -> None:
     )
 
     if cfg.get("gradient_checkpointing", True):
-        model.hubert.gradient_checkpointing_enable()
+        model.hubert.gradient_checkpointing_enable(
+            gradient_checkpointing_kwargs={"use_reentrant": False}
+        )
 
     model.to(device)
 
     if is_distributed():
-        model = DDP(model, device_ids=[local_rank()], output_device=local_rank())
+        model = DDP(model, device_ids=[local_rank()], output_device=local_rank(),
+                     find_unused_parameters=True)
+        model._set_static_graph()
 
     # === Feature extractor ===
     fe = Wav2Vec2FeatureExtractor.from_pretrained(model_name)
